@@ -8,7 +8,10 @@ import { PageTransition } from "@/components/common/PageTransition";
 import { ChallengeProgressCard } from "@/components/history/ChallengeProgressCard";
 import { DurationPicker } from "@/components/meditation/DurationPicker";
 import { MeditationCard } from "@/components/meditation/MeditationCard";
-import { getRecommendedMeditations } from "@/data/meditations";
+import {
+  getBestMeditationForDuration,
+  getRecommendedMeditations,
+} from "@/data/meditations";
 import { useTimePeriod } from "@/hooks/useTimePeriod";
 import {
   getChallengeProgress,
@@ -26,15 +29,19 @@ export default function HomePage() {
     (state) => state.setSelectedDuration,
   );
 
-  const recommended = getRecommendedMeditations(config.id, 3);
-  const featured = recommended[0];
+  const recommended = getRecommendedMeditations(
+    config.id,
+    3,
+    selectedDuration,
+  );
+  const featured = getBestMeditationForDuration(selectedDuration, config.id);
   const todayMinutes = getTodayMinutes(history);
   const streak = getCurrentStreak(history);
   const challenge = getChallengeProgress(history);
 
   const startMeditation = (contentId?: string) => {
     const id = contentId ?? featured.id;
-    router.push(`/session/${id}?duration=${selectedDuration}`);
+    router.push(`/session/${id}`);
   };
 
   return (

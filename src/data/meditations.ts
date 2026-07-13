@@ -83,15 +83,48 @@ export function getMeditationById(id: string): MeditationContent | undefined {
   return meditations.find((item) => item.id === id);
 }
 
+export function getMeditationsByDuration(duration: number): MeditationContent[] {
+  return meditations.filter((item) => item.duration === duration);
+}
+
+export function getBestMeditationForDuration(
+  duration: number,
+  period?: TimePeriod,
+): MeditationContent {
+  const exactMatches = getMeditationsByDuration(duration);
+
+  if (exactMatches.length > 0) {
+    if (period) {
+      const periodMatches = exactMatches.filter((item) =>
+        item.recommendedTimes.includes(period),
+      );
+      if (periodMatches.length > 0) {
+        return periodMatches[0];
+      }
+    }
+    return exactMatches[0];
+  }
+
+  return [...meditations].sort(
+    (a, b) =>
+      Math.abs(a.duration - duration) - Math.abs(b.duration - duration),
+  )[0];
+}
+
 export function getRecommendedMeditations(
   period: TimePeriod,
   limit = 3,
+  duration?: number,
 ): MeditationContent[] {
-  const matched = meditations.filter((item) =>
-    item.recommendedTimes.includes(period),
-  );
-  const rest = meditations.filter(
-    (item) => !item.recommendedTimes.includes(period),
-  );
+  const pool =
+    duration !== undefined
+      ? (() => {
+          const byDuration = getMeditationsByDuration(duration);
+          return byDuration.length > 0 ? byDuration : meditations;
+        })()
+      : meditations;
+
+  const matched = pool.filter((item) => item.recommendedTimes.includes(period));
+  const rest = pool.filter((item) => !item.recommendedTimes.includes(period));
   return [...matched, ...rest].slice(0, limit);
 }

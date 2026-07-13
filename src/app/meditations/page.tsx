@@ -11,13 +11,11 @@ import {
   meditations,
 } from "@/data/meditations";
 import type { Category } from "@/types/meditation";
-import { useMeditationStore } from "@/store/meditationStore";
 
 const categories = Object.keys(CATEGORY_LABELS) as Category[];
 
 export default function MeditationsPage() {
   const router = useRouter();
-  const selectedDuration = useMeditationStore((state) => state.selectedDuration);
   const [category, setCategory] = useState<Category | "all">("all");
   const [duration, setDuration] = useState<number | "all">("all");
 
@@ -88,11 +86,7 @@ export default function MeditationsPage() {
             <MeditationCard
               key={meditation.id}
               meditation={meditation}
-              onClick={() =>
-                router.push(
-                  `/session/${meditation.id}?duration=${selectedDuration}`,
-                )
-              }
+              onClick={() => router.push(`/session/${meditation.id}`)}
             />
           ))}
         </div>

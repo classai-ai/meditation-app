@@ -90,11 +90,9 @@ export default function CompletePage() {
             <Button onClick={() => router.push("/")}>홈으로 돌아가기</Button>
             <Button
               variant="secondary"
-              onClick={() =>
-                router.push(
-                  `/session/${lastCompleted.contentId}?duration=${duration}`,
-                )
-              }
+          onClick={() =>
+            router.push(`/session/${lastCompleted.contentId}`)
+          }
             >
               한 번 더 명상하기
             </Button>

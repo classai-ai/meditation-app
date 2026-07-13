@@ -1,7 +1,7 @@
 "use client";
 
-import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { use, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Maximize2, Minimize2, Pause, Play, X } from "lucide-react";
 import { BackgroundImage } from "@/components/common/BackgroundImage";
 import { Button } from "@/components/common/Button";
@@ -22,24 +22,21 @@ function formatTime(totalSeconds: number): string {
     .padStart(2, "0")}`;
 }
 
-export default function SessionPage({ params }: SessionPageProps) {
+function SessionContent({ contentId }: { contentId: string }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const { id: contentId } = use(params);
   const addRecord = useMeditationStore((state) => state.addRecord);
   const preferences = useMeditationStore((state) => state.preferences);
 
-  const durationMinutes = Number(searchParams.get("duration") ?? "5");
-  const totalSeconds = useMemo(() => durationMinutes * 60, [durationMinutes]);
+  const meditation = getMeditationById(contentId);
+  const periodConfig = getTimePeriodConfig(getTimePeriod());
+  const durationMinutes = meditation?.duration ?? 5;
+  const totalSeconds = durationMinutes * 60;
 
   const [remainingSeconds, setRemainingSeconds] = useState(totalSeconds);
   const [playing, setPlaying] = useState(false);
   const [started, setStarted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const intervalRef = useRef<number | null>(null);
-
-  const meditation = getMeditationById(contentId);
-  const periodConfig = getTimePeriodConfig(getTimePeriod());
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -89,13 +86,21 @@ export default function SessionPage({ params }: SessionPageProps) {
     return clearTimer;
   }, [clearTimer, completeSession, playing, started]);
 
+  const handleStart = () => {
+    setStarted(true);
+    setPlaying(true);
+  };
+
   const handleStartPause = () => {
     if (!started) {
-      setStarted(true);
-      setPlaying(true);
+      handleStart();
       return;
     }
     setPlaying((current) => !current);
+  };
+
+  const handlePlayerStateChange = (isPlaying: boolean) => {
+    setPlaying((current) => (current === isPlaying ? current : isPlaying));
   };
 
   const handleExit = () => {
@@ -134,7 +139,6 @@ export default function SessionPage({ params }: SessionPageProps) {
 
   return (
     <BackgroundImage
-      key={`${contentId}-${durationMinutes}`}
       src={periodConfig.backgroundImage}
       fallbackSrc={periodConfig.fallbackImage}
       overlayColor={periodConfig.overlayColor}
@@ -148,6 +152,7 @@ export default function SessionPage({ params }: SessionPageProps) {
             <h1 className="mt-1 text-2xl font-bold text-white">
               {meditation.title}
             </h1>
+            <p className="mt-1 text-sm text-muted">{durationMinutes}분 콘텐츠</p>
           </div>
           <button
             type="button"
@@ -174,21 +179,24 @@ export default function SessionPage({ params }: SessionPageProps) {
           </div>
 
           <MeditationYouTubePlayer
+            key={meditation.youtubeId}
             videoId={meditation.youtubeId}
             fallbackVideoId={meditation.fallbackYoutubeId}
             playing={playing}
+            started={started}
+            onPlayerStateChange={handlePlayerStateChange}
           />
 
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Button
-              variant="secondary"
+              variant={started ? "secondary" : "primary"}
               onClick={handleStartPause}
-              className="min-w-36"
+              className="min-w-40"
             >
               {!started ? (
                 <>
                   <Play className="mr-2 h-4 w-4" />
-                  타이머 시작
+                  명상 시작
                 </>
               ) : playing ? (
                 <>
@@ -225,4 +233,9 @@ export default function SessionPage({ params }: SessionPageProps) {
       </div>
     </BackgroundImage>
   );
+}
+
+export default function SessionPage({ params }: SessionPageProps) {
+  const { id: contentId } = use(params);
+  return <SessionContent key={contentId} contentId={contentId} />;
 }
